@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kitoblar javoni</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   🎨 BREND: logotip va ranglar tayyor bo'lganda faqat shu qismni o'zgartiring
+   ===================================================================== */
+:root {
+  --paper:   #F2ECE2;   /* fon: eski qog'oz */
+  --card:    #FBF8F3;   /* karta foni */
+  --ink:     #24302E;   /* asosiy matn */
+  --muted:   #7A7F78;   /* ikkinchi darajali matn */
+  --accent:  #2E6B66;   /* brend rangi: tugmalar, tanlangan janr */
+  --accent-ink: #FFFFFF;
+  --line:    #E2D9CB;   /* chiziqlar */
+  --ok:      #2E7D4F;
+  --busy:    #A2672A;
+  --serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --sans:  "Manrope", -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+:root.dark {
+  --paper: #171C1B; --card: #202725; --ink: #ECE7DE; --muted: #9AA19B;
+  --accent: #5FA8A1; --accent-ink: #0E1413; --line: #2E3735; --ok: #6CC08F; --busy: #D9A15F;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; }
+body { padding-bottom: calc(76px + env(safe-area-inset-bottom)); }
+button { font-family: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- sarlavha ---------- */
+.top { padding: 18px 18px 10px; display: flex; align-items: center; gap: 12px; }
+.logo { width: 40px; height: 40px; border-radius: 10px; background: var(--accent); color: var(--accent-ink);
+        display: grid; place-items: center; font-family: var(--serif); font-weight: 700; font-size: 22px; flex: none; overflow: hidden; }
+.logo img { width: 100%; height: 100%; object-fit: cover; }
+.brand { font-family: var(--serif); font-size: 26px; font-weight: 700; line-height: 1; letter-spacing: .2px; }
+.hello { color: var(--muted); font-size: 13.5px; margin-top: 4px; }
+
+/* ---------- banner: yangi kelganlar ---------- */
+.hero { margin: 6px 14px 4px; position: relative; border-radius: 18px; overflow: hidden; height: 196px; background: #1d2a28; }
+.slide { position: absolute; inset: 0; display: flex; opacity: 0; transition: opacity .5s ease; cursor: pointer; }
+.slide.on { opacity: 1; }
+.slide .bg { position: absolute; inset: -20px; background-size: cover; background-position: center; filter: blur(18px) brightness(.55) saturate(1.1); transform: scale(1.1); }
+.slide .txt { position: relative; flex: 1; padding: 18px 8px 34px 18px; display: flex; flex-direction: column; justify-content: flex-end; color: #fff; }
+.slide .new { align-self: flex-start; font-size: 12px; font-weight: 600; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.28);
+              padding: 4px 10px; border-radius: 99px; margin-bottom: auto; backdrop-filter: blur(4px); }
+.slide h2 { font-family: var(--serif); font-size: 25px; line-height: 1.05; margin: 0 0 6px; font-weight: 700; }
+.slide .au { font-size: 13px; opacity: .85; margin-bottom: 10px; }
+.slide .pr { font-size: 13.5px; font-weight: 600; }
+.slide .cov { position: relative; width: 112px; margin: 16px 16px 16px 0; border-radius: 6px; box-shadow: 0 10px 24px rgba(0,0,0,.45); overflow: hidden; flex: none; }
+.slide .cov img, .slide .cov .gen { width: 100%; height: 100%; object-fit: cover; }
+.dots { position: absolute; bottom: 10px; left: 18px; display: flex; gap: 5px; }
+.dots i { width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,.4); transition: width .3s; }
+.dots i.on { width: 18px; background: #fff; }
+
+/* ---------- qidiruv va janrlar ---------- */
+.bar { position: sticky; top: 0; z-index: 5; background: var(--paper); padding: 12px 14px 8px; }
+.search { display: flex; align-items: center; gap: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 0 12px; }
+.search svg { flex: none; opacity: .55; }
+.search input { flex: 1; border: 0; background: transparent; color: var(--ink); font: inherit; padding: 12px 0; outline: none; }
+.search input::placeholder { color: var(--muted); }
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0 2px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 99px;
+        padding: 7px 14px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.chip.on { background: var(--accent); color: var(--accent-ink); }
+.count { color: var(--muted); font-size: 13px; padding: 6px 18px 2px; }
+
+/* ---------- javon (to'r) ---------- */
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 12px; padding: 10px 14px; }
+.book { background: none; border: 0; padding: 0; text-align: left; color: inherit; cursor: pointer; }
+.book .cv { position: relative; aspect-ratio: 2 / 3; border-radius: 10px; overflow: hidden; background: var(--line);
+            box-shadow: 0 1px 0 var(--line), 0 6px 14px rgba(36,48,46,.10); }
+.book .cv img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.book .cv .gen { width: 100%; height: 100%; }
+.badge { position: absolute; bottom: 8px; left: 8px; font-size: 11.5px; font-weight: 700; padding: 3px 8px; border-radius: 99px;
+         background: var(--card); color: var(--ok); }
+.badge.busy { color: var(--busy); }
+.book h3 { font-family: var(--serif); font-size: 18px; line-height: 1.12; margin: 8px 2px 2px; font-weight: 700;
+           display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.book .a { color: var(--muted); font-size: 12.5px; margin: 0 2px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.book .p { font-size: 13px; font-weight: 700; margin: 0 2px; }
+.book .p span { font-weight: 500; color: var(--muted); }
+
+/* yaratilgan muqova (rasm bo'lmasa) */
+.gen { display: flex; flex-direction: column; justify-content: space-between; gap: 8px; padding: 14px 12px 38px; color: #fff;
+       background-image: linear-gradient(90deg, rgba(0,0,0,.18) 0 6px, transparent 6px); }
+.gen b { font-family: var(--serif); font-size: 19px; line-height: 1.05; }
+.gen small { font-size: 11px; opacity: .85; }
+
+.empty { text-align: center; color: var(--muted); padding: 40px 24px; line-height: 1.5; }
+.empty b { display: block; color: var(--ink); font-family: var(--serif); font-size: 22px; margin-bottom: 6px; }
+
+/* ---------- kitob sahifasi ---------- */
+.sheet { position: fixed; inset: 0; z-index: 20; background: var(--paper); overflow-y: auto; transform: translateY(100%);
+         transition: transform .32s cubic-bezier(.2,.8,.2,1); padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+.sheet.open { transform: none; }
+.sh-head { position: relative; height: 300px; overflow: hidden; display: flex; justify-content: center; align-items: flex-end; }
+.sh-head .bg { position: absolute; inset: -30px; background-size: cover; background-position: center; filter: blur(22px) brightness(.7); transform: scale(1.1); }
+.sh-head .cov { position: relative; width: 158px; aspect-ratio: 2 / 3; margin-bottom: 22px; border-radius: 8px; overflow: hidden; box-shadow: 0 16px 34px rgba(0,0,0,.4); }
+.sh-head .cov img, .sh-head .cov .gen { width: 100%; height: 100%; object-fit: cover; }
+.close { position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border-radius: 18px; border: 0;
+         background: rgba(0,0,0,.35); color: #fff; font-size: 20px; cursor: pointer; }
+.sh-body { padding: 18px 20px; }
+.sh-body h1 { font-family: var(--serif); font-size: 30px; line-height: 1.05; margin: 0 0 6px; }
+.sh-body .au { color: var(--muted); margin-bottom: 14px; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.facts span { background: var(--card); border: 1px solid var(--line); border-radius: 99px; padding: 5px 11px; font-size: 13px; }
+.status { font-weight: 700; margin-bottom: 14px; }
+.status.ok { color: var(--ok); } .status.busy { color: var(--busy); }
+.price { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; margin-bottom: 18px; }
+.price .row { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; }
+.price .row b { font-size: 17px; }
+.price .note { color: var(--muted); font-size: 12.5px; margin-top: 6px; line-height: 1.45; }
+.sh-body h4 { font-family: var(--serif); font-size: 21px; margin: 18px 0 6px; }
+.sh-body p { line-height: 1.6; margin: 0; max-width: 65ch; }
+.actions { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; display: flex; gap: 10px;
+           padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: var(--paper); border-top: 1px solid var(--line);
+           transform: translateY(110%); transition: transform .32s cubic-bezier(.2,.8,.2,1); }
+.actions.open { transform: none; }
+.btn { flex: 1; border: 0; border-radius: 14px; padding: 15px 10px; font-size: 15px; font-weight: 700; cursor: pointer;
+       background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+
+/* ---------- pastki menyu ---------- */
+.nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; background: var(--card); border-top: 1px solid var(--line);
+       padding-bottom: env(safe-area-inset-bottom); }
+.nav button { flex: 1; border: 0; background: none; color: var(--muted); padding: 9px 0 10px; font-size: 12px; font-weight: 600; cursor: pointer;
+              display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.nav button.on { color: var(--accent); }
+.nav svg { width: 22px; height: 22px; }
+
+@media (prefers-reduced-motion: reduce) { .slide, .sheet, .actions, .dots i { transition: none; } }
+@media (min-width: 560px) { .grid { grid-template-columns: repeat(3, 1fr); } body { max-width: 760px; margin: 0 auto; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="logo" id="logo">K</div>
+  <div>
+    <div class="brand" id="brand">Kitoblar javoni</div>
+    <div class="hello" id="hello">Xush kelibsiz!</div>
+  </div>
+</header>
+
+<section class="hero" id="hero" aria-label="Yangi kelgan kitoblar"></section>
+
+<div class="bar">
+  <label class="search">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input id="q" type="search" placeholder="Kitob yoki muallifni qidiring" autocomplete="off">
+  </label>
+  <div class="chips" id="chips"></div>
+</div>
+<div class="count" id="count"></div>
+<main class="grid" id="grid"></main>
+
+<article class="sheet" id="sheet" aria-hidden="true"></article>
+<div class="actions" id="actions"></div>
+
+<nav class="nav">
+  <button class="on" data-tab="all"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5m5 14V5m5 14l3-14 3 .6-3 14"/></svg>Javon</button>
+  <button data-tab="new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l2.4 5.6 6 .5-4.6 4 1.4 5.9L12 16l-5.2 3 1.4-5.9-4.6-4 6-.5z"/></svg>Yangi kelganlar</button>
+  <button data-tab="free"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12l4 4 10-10"/></svg>Hozir mavjud</button>
+  <button data-tab="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>Kabinet</button>
+</nav>
+
+<script>
+/* =====================================================================
+   ⚙️ SOZLAMALAR — Supabase va bot ma'lumotlarini shu yerga yozing
+   ===================================================================== */
+const CONFIG = {
+  SUPABASE_URL: "https://SIZNING-LOYIHA.supabase.co",        // Supabase → Project Settings → Data API → Project URL
+  SUPABASE_KEY: "sb_publishable_SIZNING_OCHIQ_KALIT",         // Supabase → API Keys → Publishable key (ochiq kalit!)
+  BOT_USERNAME: "Kitobijarabot",                               // @ belgisisiz
+  BRAND_NAME:   "Kitoblar javoni",                             // brend nomi
+  LOGO_URL:     ""                                             // logotip rasmi manzili (bo'sh bo'lsa — harf)
+};
+/* ===================================================================== */
+
+(function () {
+  const tg = window.Telegram && window.Telegram.WebApp;
+  const $ = (id) => document.getElementById(id);
+  const DEMO = CONFIG.SUPABASE_URL.includes("SIZNING");
+  let books = [], genre = "Barchasi", tab = "all", heroTimer = null;
+
+  // ---------- Telegram ----------
+  if (tg) {
+    tg.ready(); tg.expand();
+    if (tg.colorScheme === "dark") document.documentElement.classList.add("dark");
+    const bg = getComputedStyle(document.documentElement).getPropertyValue("--paper").trim();
+    try { tg.setHeaderColor(bg); tg.setBackgroundColor(bg); } catch (e) {}
+    const u = tg.initDataUnsafe && tg.initDataUnsafe.user;
+    if (u && u.first_name) $("hello").textContent = "Salom, " + u.first_name + "! Bugun nima o'qiymiz?";
+  }
+  $("brand").textContent = CONFIG.BRAND_NAME;
+  if (CONFIG.LOGO_URL) $("logo").innerHTML = '<img alt="" src="' + CONFIG.LOGO_URL + '">';
+  else $("logo").textContent = CONFIG.BRAND_NAME.trim().charAt(0).toUpperCase();
+
+  // ---------- yordamchilar ----------
+  const fmt = (n) => Math.round(Number(n || 0)).toLocaleString("ru-RU").replace(/,/g, " ");
+  const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const cover = (b) => b.cover_path ? CONFIG.SUPABASE_URL.replace(/\/$/, "") + "/storage/v1/object/public/covers/" + encodeURIComponent(b.cover_path) : "";
+  const PALETTE = ["#2E6B66", "#7A4E3A", "#3F4E73", "#6B5B2E", "#5B3F66", "#2F5A3E", "#7A3A44"];
+  function genCover(b) {
+    let h = 0; for (const ch of b.title) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return '<div class="gen" style="background:' + PALETTE[h % PALETTE.length] + '"><b>' + esc(b.title) + '</b><small>' + esc(b.author || "") + '</small></div>';
+  }
+  const coverHtml = (b) => cover(b)
+    ? '<img loading="lazy" alt="' + esc(b.title) + ' muqovasi" src="' + cover(b) + '" onerror="this.outerHTML=window.__gen(' + b.id + ')">'
+    : genCover(b);
+  window.__gen = (id) => genCover(books.find((x) => x.id === id));
+
+  // aqlli qidiruv: apostroflar, kirill-lotin, kichik xatolar
+  const CYR = { "а":"a","б":"b","в":"v","г":"g","д":"d","е":"e","ё":"yo","ж":"j","з":"z","и":"i","й":"y","к":"k","л":"l","м":"m","н":"n","о":"o","п":"p","р":"r","с":"s","т":"t","у":"u","ф":"f","х":"x","ц":"ts","ч":"ch","ш":"sh","щ":"sh","ъ":"","ы":"i","ь":"","э":"e","ю":"yu","я":"ya","ў":"o","қ":"q","ғ":"g","ҳ":"h" };
+  function norm(s) {
+    s = String(s || "").toLowerCase().replace(/[ʻʼ‘’'`´]/g, "");
+    let out = ""; for (const ch of s) out += (CYR[ch] !== undefined ? CYR[ch] : ch);
+    return out.replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
+  }
+  function fuzzy(hay, word) {          // so'z harflari ketma-ket kelsa (o'rtada harf tushib qolsa ham) topiladi
+    if (hay.includes(word)) return true;
+    if (word.length < 4) return false;
+    let i = 0; for (const ch of hay) { if (ch === word[i]) i++; if (i === word.length) return true; }
+    return false;
+  }
+  const matches = (b, q) => { const hay = norm(b.title + " " + (b.author || "")); return norm(q).split(" ").every((w) => fuzzy(hay, w)); };
+
+  function rentLine(b) {
+    if (b.available > 0 && b.rent_fee) return "Ijara " + fmt(b.rent_fee) + " so'm <span>· " + b.rent_days + " kun</span>";
+    if (b.sale_only > 0) return "Sotuvda " + fmt(b.price) + " so'm";
+    return '<span>Hozir band</span>';
+  }
+
+  // ---------- banner ----------
+  function renderHero() {
+    const fresh = books.slice(0, 5);
+    clearInterval(heroTimer);
+    if (!fresh.length) { $("hero").style.display = "none"; return; }
+    $("hero").innerHTML = fresh.map((b, i) =>
+      '<div class="slide' + (i === 0 ? " on" : "") + '" data-id="' + b.id + '">' +
+      '<div class="bg" style="background-image:url(\'' + cover(b) + '\');background-color:' + PALETTE[i % PALETTE.length] + '"></div>' +
+      '<div class="txt"><span class="new">✦ Yangi keldi</span><h2>' + esc(b.title) + '</h2><div class="au">' + esc(b.author || "") + '</div>' +
+      '<div class="pr">' + (b.rent_fee ? "Ijara " + fmt(b.rent_fee) + " so'mdan" : "Batafsil") + '</div></div>' +
+      '<div class="cov">' + coverHtml(b) + '</div></div>').join("") +
+      '<div class="dots">' + fresh.map((_, i) => '<i class="' + (i === 0 ? "on" : "") + '"></i>').join("") + '</div>';
+    let k = 0;
+    const slides = $("hero").querySelectorAll(".slide"), dots = $("hero").querySelectorAll(".dots i");
+    slides.forEach((s) => s.onclick = () => openBook(+s.dataset.id));
+    if (fresh.length > 1 && !matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      heroTimer = setInterval(() => {
+        slides[k].classList.remove("on"); dots[k].classList.remove("on");
+        k = (k + 1) % slides.length;
+        slides[k].classList.add("on"); dots[k].classList.add("on");
+      }, 4500);
+    }
+  }
+
+  // ---------- janrlar ----------
+  function renderChips() {
+    const genres = ["Barchasi"].concat([...new Set(books.map((b) => b.genre).filter(Boolean))].sort());
+    $("chips").innerHTML = genres.map((g) => '<button class="chip' + (g === genre ? " on" : "") + '">' + esc(g) + '</button>').join("");
+    $("chips").querySelectorAll(".chip").forEach((c) => c.onclick = () => { genre = c.textContent; renderChips(); renderGrid(); });
+  }
+
+  // ---------- javon ----------
+  function renderGrid() {
+    const q = $("q").value.trim();
+    let list = books.filter((b) => (genre === "Barchasi" || b.genre === genre) && (!q || matches(b, q)));
+    if (tab === "new") list = list.slice(0, 20);
+    if (tab === "free") list = list.filter((b) => b.available > 0);
+    $("count").textContent = list.length ? list.length + " ta kitob" : "";
+    if (!list.length) {
+      $("grid").innerHTML = '<div class="empty" style="grid-column:1/-1"><b>Hech narsa topilmadi</b>' +
+        (q ? "«" + esc(q) + "» bo'yicha kitob yo'q. Boshqacha yozib ko'ring yoki janr filtrini «Barchasi»ga qaytaring."
+           : "Bu bo'limda hozircha kitob yo'q.") + '</div>';
+      return;
+    }
+    $("grid").innerHTML = list.map((b) =>
+      '<button class="book" data-id="' + b.id + '"><div class="cv">' + coverHtml(b) +
+      (b.available > 0 ? '<span class="badge">Mavjud</span>' : b.sale_only > 0 ? '<span class="badge busy">Faqat sotuvda</span>' : '<span class="badge busy">Band</span>') +
+      '</div><h3>' + esc(b.title) + '</h3><div class="a">' + esc(b.author || "Muallif ko'rsatilmagan") + '</div><div class="p">' + rentLine(b) + '</div></button>').join("");
+    $("grid").querySelectorAll(".book").forEach((el) => el.onclick = () => openBook(+el.dataset.id));
+  }
+
+  // ---------- kitob sahifasi ----------
+  function goBot(id) {
+    const link = "https://t.me/" + CONFIG.BOT_USERNAME + "?start=b_" + id + "_app";
+    if (tg && tg.openTelegramLink) { tg.openTelegramLink(link); setTimeout(() => tg.close(), 300); }
+    else window.open(link, "_blank");
+  }
+  function openBook(id) {
+    const b = books.find((x) => x.id === id); if (!b) return;
+    const facts = [b.genre, b.publish_year ? b.publish_year + "-yil nashri" : "", b.pages ? b.pages + " bet" : ""].filter(Boolean);
+    const free = b.available > 0;
+    $("sheet").innerHTML =
+      '<div class="sh-head"><div class="bg" style="background-image:url(\'' + cover(b) + '\');background-color:' + PALETTE[b.id % PALETTE.length] + '"></div>' +
+      '<div class="cov">' + coverHtml(b) + '</div><button class="close" aria-label="Yopish">×</button></div>' +
+      '<div class="sh-body"><h1>' + esc(b.title) + '</h1><div class="au">' + esc(b.author || "") + '</div>' +
+      '<div class="facts">' + facts.map((f) => "<span>" + esc(f) + "</span>").join("") + '</div>' +
+      '<div class="status ' + (free ? "ok" : "busy") + '">' + (free ? "✓ Hozir mavjud — " + b.available + " ta nusxa" :
+          b.sale_only > 0 ? "Faqat sotuvda (nusxa zararlangan, arzon)" : "Hozir hammasi band") + '</div>' +
+      (free || b.sale_only > 0 ? '<div class="price">' +
+        (free && b.rent_fee ? '<div class="row"><span>Ijara haqi</span><b>' + fmt(b.rent_fee) + " so'm</b></div>" +
+          '<div class="row"><span>Muddati</span><b>' + b.rent_days + " kun</b></div>" : "") +
+        '<div class="row"><span>' + (free ? "Sotib olish / depozit" : "Sotuv narxi") + '</span><b>' + fmt(b.price) + " so'm</b></div>" +
+        (free ? '<div class="note">Ijarada kitob narxicha depozit muzlatiladi va kitob qaytgach ijara haqi ayirilib qaytadi. ' +
+                "Erta qaytarsangiz, ijara haqi kamroq bo'ladi.</div>" : "") + '</div>' : "") +
+      (b.description ? "<h4>Qisqacha mazmuni</h4><p>" + esc(b.description) + "</p>" : "") +
+      (b.themes ? "<h4>Asosiy mavzular</h4><p>" + esc(b.themes) + "</p>" : "") + '</div>';
+    $("actions").innerHTML = free
+      ? '<button class="btn ghost" id="buy">Sotib olish</button><button class="btn" id="rent">Ijaraga olish</button>'
+      : b.sale_only > 0 ? '<button class="btn" id="buy">Sotib olish</button>'
+      : '<button class="btn" id="wait">Bo\'shaganda xabar berish</button>';
+    ["rent", "buy", "wait"].forEach((k) => { const el = $(k); if (el) el.onclick = () => goBot(b.id); });
+    $("sheet").querySelector(".close").onclick = closeBook;
+    $("sheet").scrollTop = 0;
+    $("sheet").classList.add("open"); $("actions").classList.add("open"); $("sheet").setAttribute("aria-hidden", "false");
+    if (tg && tg.BackButton) { tg.BackButton.show(); }
+  }
+  function closeBook() {
+    $("sheet").classList.remove("open"); $("actions").classList.remove("open"); $("sheet").setAttribute("aria-hidden", "true");
+    if (tg && tg.BackButton) tg.BackButton.hide();
+  }
+  if (tg && tg.BackButton) tg.BackButton.onClick(closeBook);
+
+  // ---------- pastki menyu ----------
+  document.querySelectorAll(".nav button").forEach((btn) => btn.onclick = () => {
+    if (btn.dataset.tab === "me") {   // kabinet: balans, ijaralar, bonus — botda
+      const link = "https://t.me/" + CONFIG.BOT_USERNAME;
+      if (tg && tg.openTelegramLink) { tg.openTelegramLink(link); tg.close(); } else window.open(link, "_blank");
+      return;
+    }
+    document.querySelectorAll(".nav button").forEach((x) => x.classList.toggle("on", x === btn));
+    tab = btn.dataset.tab; renderGrid(); window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  $("q").addEventListener("input", () => renderGrid());
+
+  // ---------- ma'lumot ----------
+  async function load() {
+    $("grid").innerHTML = '<div class="empty" style="grid-column:1/-1">Kitoblar yuklanmoqda…</div>';
+    if (DEMO) { books = window.__DEMO; return draw(); }
+    const headers = { "apikey": CONFIG.SUPABASE_KEY, "Content-Type": "application/json" };
+    if (CONFIG.SUPABASE_KEY.startsWith("eyJ")) headers["Authorization"] = "Bearer " + CONFIG.SUPABASE_KEY;
+    try {
+      const r = await fetch(CONFIG.SUPABASE_URL.replace(/\/$/, "") + "/rest/v1/rpc/app_katalog", { method: "POST", headers, body: "{}" });
+      if (!r.ok) throw new Error(r.status + " " + (await r.text()).slice(0, 120));
+      books = await r.json();
+      draw();
+    } catch (e) {
+      $("grid").innerHTML = '<div class="empty" style="grid-column:1/-1"><b>Katalog yuklanmadi</b>Internet aloqasini tekshirib, sahifani qayta oching.' +
+        '<br><small style="opacity:.6">' + esc(e.message) + '</small></div>';
+    }
+  }
+  function draw() { renderHero(); renderChips(); renderGrid(); }
+
+  // namuna rejimi: CONFIG to'ldirilmaguncha dizaynni ko'rish uchun
+  window.__DEMO = [
+    { id: 1, title: "O'tkan kunlar", author: "Abdulla Qodiriy", genre: "O'zbek adabiyoti", pages: 368, publish_year: 2023, available: 2, sale_only: 0, price: 52940, rent_fee: 9530, rent_days: 37, description: "O'zbek adabiyotidagi birinchi roman. XIX asr Turkistonida yashagan Otabek va Kumushning sevgisi, ular boshidan kechirgan sinovlar tasvirlanadi.", themes: "sevgi va sadoqat, oila va urf-odatlar, tarixiy davr" },
+    { id: 2, title: "Ikki eshik orasi", author: "O'tkir Hoshimov", genre: "O'zbek adabiyoti", pages: 480, publish_year: 2022, available: 1, sale_only: 0, price: 64700, rent_fee: 11650, rent_days: 48, description: "O'zbek xalqining Ikkinchi jahon urushi va urushdan keyingi yillardagi hayoti tasvirlanadi.", themes: "urush, oila, mehr-oqibat" },
+    { id: 3, title: "Alkimyogar", author: "Paulo Koelo", genre: "Jahon adabiyoti", pages: 208, publish_year: 2024, available: 3, sale_only: 0, price: 49410, rent_fee: 8890, rent_days: 21, description: "Yosh cho'pon Santyago o'z orzusi — xazina izidan uzoq safarga chiqadi.", themes: "orzu, taqdir, sabr" },
+    { id: 4, title: "Kichkina shahzoda", author: "Antuan de Sent-Ekzyuperi", genre: "Bolalar adabiyoti", pages: 96, publish_year: 2023, available: 0, sale_only: 0, price: 35290, rent_fee: null, rent_days: null, description: "Kichik sayyoradan kelgan shahzoda va uchuvchining uchrashuvi haqidagi falsafiy ertak.", themes: "do'stlik, mas'uliyat" },
+    { id: 5, title: "Atom odatlar", author: "Jeyms Klir", genre: "Shaxsiy rivojlanish", pages: 320, publish_year: 2024, available: 1, sale_only: 0, price: 70590, rent_fee: 12710, rent_days: 32, description: "Kichik odatlar vaqt o'tib katta natijalarga olib kelishi haqidagi amaliy kitob.", themes: "odatlar, intizom" },
+    { id: 6, title: "Shum bola", author: "G'afur G'ulom", genre: "O'zbek adabiyoti", pages: 176, publish_year: 2021, available: 0, sale_only: 1, price: 18000, rent_fee: null, rent_days: null, description: "Sho'x va zukko bolaning kulgili sarguzashtlari.", themes: "bolalik, hazil" },
+    { id: 7, title: "1984", author: "Jorj Oruell", genre: "Jahon adabiyoti", pages: 328, publish_year: 2022, available: 2, sale_only: 0, price: 58820, rent_fee: 10590, rent_days: 33, description: "Hamma narsa nazorat ostida bo'lgan totalitar davlat haqidagi distopik roman.", themes: "erkinlik, haqiqat" },
+    { id: 8, title: "Boy ota, kambag'al ota", author: "Robert Kiyosaki", genre: "Biznes", pages: 336, publish_year: 2023, available: 1, sale_only: 0, price: 64700, rent_fee: 11650, rent_days: 34, description: "Pul haqida ikki xil qarashga ega ikki «ota»dan olingan saboqlar.", themes: "moliyaviy savodxonlik" }
+  ];
+  load();
+})();
+</script>
+</body>
+</html>
